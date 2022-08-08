@@ -11,10 +11,15 @@ const MyApp = ({ Component, pageProps }) => {
   // Extract the data we need
   const { global } = pageProps
   if (global == null) {
+    console.error("No global data found")
     return <ErrorPage statusCode={404} />
   }
 
-  const { metadata, favicon, metaTitleSuffix } = global.attributes
+  // console.debug("From MyApp:")
+  // console.debug(JSON.stringify(global))
+
+  const { metadata, favicon, metaTitleSuffix } =
+    global.attributes || global.data.attributes
 
   return (
     <>
@@ -31,15 +36,17 @@ const MyApp = ({ Component, pageProps }) => {
         title="Page"
         description={metadata.metaDescription}
         openGraph={{
-          images: Object.values(
-            metadata.shareImage.data.attributes.formats
-          ).map((image) => {
-            return {
-              url: getStrapiMedia(image.url),
-              width: image.width,
-              height: image.height,
-            }
-          }),
+          images: metadata.shareImage.data
+            ? Object.values(metadata.shareImage.data.attributes.formats).map(
+                (image) => {
+                  return {
+                    url: getStrapiMedia(image.url),
+                    width: image.width,
+                    height: image.height,
+                  }
+                }
+              )
+            : null,
         }}
         twitter={{
           cardType: metadata.twitterCardType,
@@ -60,7 +67,7 @@ MyApp.getInitialProps = async (appContext) => {
   // Calls page's `getInitialProps` and fills `appProps.pageProps`
   const appProps = await App.getInitialProps(appContext)
   const globalLocale = await getGlobalData(appContext.router.locale)
-
+  console.log("globalLocale:", JSON.stringify(globalLocale))
   return {
     ...appProps,
     pageProps: {

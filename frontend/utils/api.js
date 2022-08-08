@@ -34,7 +34,8 @@ export async function fetchAPI(path, urlParamsObject = {}, options = {}) {
   // Handle response
   if (!response.ok) {
     console.error(response.statusText)
-    throw new Error(`An error occured please try again`)
+    // throw new Error(`An error occured please try again`)
+    return 
   }
   const data = await response.json()
   return data
@@ -50,116 +51,96 @@ export async function fetchAPI(path, urlParamsObject = {}, options = {}) {
 export async function getPageData({ slug, locale, preview }) {
   // Find the pages that match this slug
   const gqlEndpoint = getStrapiURL("/graphql")
-  const pagesRes = await fetch(gqlEndpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      query: `
-        fragment FileParts on UploadFileEntityResponse {
+  const query = {
+    query: `
+      fragment FileParts on UploadFileEntityResponse {
+        data {
+          id
+          attributes {
+            alternativeText
+            width
+            height
+            mime
+            url
+            formats
+          }
+        }
+      }
+      query GetPages(
+        $slug: String!
+        $publicationState: PublicationState!
+        $locale: I18NLocaleCode!
+      ) {        
+        pages(
+          filters: { slug: { eq: $slug } }
+          publicationState: $publicationState
+          locale: $locale
+        ) {
           data {
             id
             attributes {
-              alternativeText
-              width
-              height
-              mime
-              url
-              formats
-            }
-          }
-        }
-        query GetPages(
-          $slug: String!
-          $publicationState: PublicationState!
-          $locale: I18NLocaleCode!
-        ) {        
-          pages(
-            filters: { slug: { eq: $slug } }
-            publicationState: $publicationState
-            locale: $locale
-          ) {
-            data {
-              id
-              attributes {
-                locale
-                localizations {
-                  data {
-                    id
-                    attributes {
-                      locale
-                    }
+              locale
+              localizations {
+                data {
+                  id
+                  attributes {
+                    locale
                   }
                 }
-                slug
-                metadata {
-                  metaTitle
-                  metaDescription
-                  shareImage {
+              }
+              slug
+              metadata {
+                metaTitle
+                metaDescription
+                shareImage {
+                  ...FileParts
+                }
+                twitterCardType
+                twitterUsername
+              }
+              contentSections {
+                __typename
+                ... on ComponentSectionsBottomActions {
+                  id
+                  title
+                  buttons {
+                    id
+                    newTab
+                    text
+                    type
+                    url
+                  }
+                }
+                ... on ComponentSectionsHero {
+                  id
+                  buttons {
+                    id
+                    newTab
+                    text
+                    type
+                    url
+                  }
+                  title
+                  description
+                  label
+                  picture {
                     ...FileParts
                   }
-                  twitterCardType
-                  twitterUsername
                 }
-                contentSections {
-                  __typename
-                  ... on ComponentSectionsBottomActions {
+                ... on ComponentSectionsFeatureColumnsGroup {
+                  id
+                  features {
                     id
-                    title
-                    buttons {
-                      id
-                      newTab
-                      text
-                      type
-                      url
-                    }
-                  }
-                  ... on ComponentSectionsHero {
-                    id
-                    buttons {
-                      id
-                      newTab
-                      text
-                      type
-                      url
-                    }
-                    title
                     description
-                    label
-                    picture {
+                    icon {
                       ...FileParts
                     }
+                    title
                   }
-                  ... on ComponentSectionsFeatureColumnsGroup {
-                    id
-                    features {
-                      id
-                      description
-                      icon {
-                        ...FileParts
-                      }
-                      title
-                    }
-                  }
-                  ... on ComponentSectionsFeatureRowsGroup {
-                    id
-                    features {
-                      id
-                      description
-                      link {
-                        id
-                        newTab
-                        text
-                        url
-                      }
-                      media {
-                        ...FileParts
-                      }
-                      title
-                    }
-                  }
-                  ... on ComponentSectionsTestimonialsGroup {
+                }
+                ... on ComponentSectionsFeatureRowsGroup {
+                  id
+                  features {
                     id
                     description
                     link {
@@ -168,82 +149,106 @@ export async function getPageData({ slug, locale, preview }) {
                       text
                       url
                     }
-                    logos {
-                      id
-                      title
-                      logo {
-                        ...FileParts
-                      }
-                    }
-                    testimonials {
-                      id
-                      logo {
-                        ...FileParts
-                      }
-                      picture {
-                        ...FileParts
-                      }
-                      text
-                      authorName
-                      authorTitle
-                      link
-                    }
-                    title
-                  }
-                  ... on ComponentSectionsLargeVideo {
-                    id
-                    description
-                    title
-                    poster {
+                    media {
                       ...FileParts
-                    }
-                    video {
-                      ...FileParts
-                    }
-                  }
-                  ... on ComponentSectionsRichText {
-                    id
-                    content
-                  }
-                  ... on ComponentSectionsPricing {
-                    id
-                    title
-                    plans {
-                      description
-                      features {
-                        id
-                        name
-                      }
-                      id
-                      isRecommended
-                      name
-                      price
-                      pricePeriod
-                    }
-                  }
-                  ... on ComponentSectionsLeadForm {
-                    id
-                    emailPlaceholder
-                    location
-                    submitButton {
-                      id
-                      text
-                      type
                     }
                     title
                   }
                 }
+                ... on ComponentSectionsTestimonialsGroup {
+                  id
+                  description
+                  link {
+                    id
+                    newTab
+                    text
+                    url
+                  }
+                  logos {
+                    id
+                    title
+                    logo {
+                      ...FileParts
+                    }
+                  }
+                  testimonials {
+                    id
+                    logo {
+                      ...FileParts
+                    }
+                    picture {
+                      ...FileParts
+                    }
+                    text
+                    authorName
+                    authorTitle
+                    link
+                  }
+                  title
+                }
+                ... on ComponentSectionsLargeVideo {
+                  id
+                  description
+                  title
+                  poster {
+                    ...FileParts
+                  }
+                  video {
+                    ...FileParts
+                  }
+                }
+                ... on ComponentSectionsRichText {
+                  id
+                  content
+                }
+                ... on ComponentSectionsPricing {
+                  id
+                  title
+                  plans {
+                    description
+                    features {
+                      id
+                      name
+                    }
+                    id
+                    isRecommended
+                    name
+                    price
+                    pricePeriod
+                  }
+                }
+                ... on ComponentSectionsLeadForm {
+                  id
+                  emailPlaceholder
+                  location
+                  submitButton {
+                    id
+                    text
+                    type
+                  }
+                  title
+                }
               }
             }
           }
-        }      
-      `,
-      variables: {
-        slug,
-        publicationState: preview ? "PREVIEW" : "LIVE",
-        locale,
-      },
-    }),
+        }
+      }      
+    `,
+    variables: {
+      slug,
+      publicationState: preview ? "PREVIEW" : "LIVE",
+      locale,
+    },
+  }
+  const bodyStr = JSON.stringify(query)
+  console.debug("Getting page data")
+  console.debug(bodyStr)
+  const pagesRes = await fetch(gqlEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: bodyStr,
   })
 
   const pagesData = await pagesRes.json()
@@ -259,93 +264,108 @@ export async function getPageData({ slug, locale, preview }) {
 // Get site data from Strapi (metadata, navbar, footer...)
 export async function getGlobalData(locale) {
   const gqlEndpoint = getStrapiURL("/graphql")
-  const globalRes = await fetch(gqlEndpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      query: `
-        fragment FileParts on UploadFileEntityResponse {
+  const query = {
+    query: `
+      fragment FileParts on UploadFileEntityResponse {
+        data {
+          id
+          attributes {
+            alternativeText
+            width
+            height
+            mime
+            url
+            formats
+          }
+        }
+      }
+      query GetGlobal($locale: I18NLocaleCode!) {
+        global(locale: $locale) {
           data {
             id
             attributes {
-              alternativeText
-              width
-              height
-              mime
-              url
-              formats
-            }
-          }
-        }
-        query GetGlobal($locale: I18NLocaleCode!) {
-          global(locale: $locale) {
-            data {
-              id
-              attributes {
-                favicon {
+              favicon {
+                ...FileParts
+              }
+              metadata {
+                metaTitle
+                metaDescription
+                shareImage {
                   ...FileParts
                 }
-                metadata {
-                  metaTitle
-                  metaDescription
-                  shareImage {
-                    ...FileParts
-                  }
-                  twitterCardType
-                  twitterUsername
+                twitterCardType
+                twitterUsername
+              }
+              metaTitleSuffix
+              notificationBanner {
+                type
+                text
+              }
+              navbar {
+                logo {
+                  ...FileParts
                 }
-                metaTitleSuffix
-                notificationBanner {
-                  type
+                links {
+                  id
+                  url
+                  newTab
                   text
                 }
-                navbar {
-                  logo {
-                    ...FileParts
-                  }
+                button {
+                  id
+                  url
+                  newTab
+                  text
+                  type
+                }
+              }
+              footer {
+                logo {
+                  ...FileParts
+                }
+                smallText
+                columns {
+                  id
+                  title
                   links {
                     id
                     url
                     newTab
                     text
                   }
-                  button {
-                    id
-                    url
-                    newTab
-                    text
-                    type
-                  }
-                }
-                footer {
-                  logo {
-                    ...FileParts
-                  }
-                  smallText
-                  columns {
-                    id
-                    title
-                    links {
-                      id
-                      url
-                      newTab
-                      text
-                    }
-                  }
                 }
               }
             }
           }
-        }      
-      `,
-      variables: {
-        locale,
+        }
+      }      
+    `,
+    variables: {
+      locale,
+    },
+  }
+  const bodyStr = JSON.stringify(query)
+  // console.debug(bodyStr)
+  let global = undefined
+  try {
+    const globalRes = await fetch(gqlEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    }),
-  })
+      body: bodyStr,
+    })
+    global = await globalRes.json()
+  }
+  catch (e) {
+    console.error(e)
+  }
 
-  const global = await globalRes.json()
-  return global.data.global
+  if (global && global.data) {
+   // console.debug("From API:")
+    // console.debug(JSON.stringify(global.data))
+    return global.data.global
+  }
+  console.error("No global data found")
+  return {global: {}, metadata: { title: "A Website" }}
 }
